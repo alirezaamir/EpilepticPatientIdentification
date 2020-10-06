@@ -42,12 +42,9 @@ from tensorflow.keras.models import load_model
 from sklearn.metrics import accuracy_score
 import argparse
 import pprint
+import json
 
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('exp_type', type=str)
-parser.add_argument('inference', type=int)
-
-args = parser.parse_args()
+TEST = 0
 
 # pat_list = ['pat_26102', 'pat_96002', 'pat_16202', 'pat_103002', 'pat_102',
 #             'pat_109502', 'pat_85202', 'pat_21602', 'pat_32502', 'pat_92102',
@@ -73,16 +70,13 @@ pat_list_8 = ['pat_30002', 'pat_46702', 'pat_75202', 'pat_59102', 'pat_22602', '
 
 pat_list = pat_list_25
 
-root_dir = ''
+root_dir = '../'
 
 
-def train_target_model_tau_S3(exp_type, target_patients_test):
+def train_target_model_tau_S3(target_patients_test):
 
     y_train, X_train = dt.get_data_pickle(root=root_dir, target_patients=target_patients_test, data_type='non_seiz')
     X_train = dt.get_wavelet(X_train)
-
-    # y_test, X_test = dt.get_data_pickle(root=root_dir, target_patients=target_patients_test, data_type=exp_type)
-    # X_test = dt.get_wavelet(X_test)
 
     X_train = np.expand_dims(X_train, axis=2)
     # X_test = np.expand_dims(X_test, axis=2)
@@ -100,7 +94,7 @@ def train_target_model_tau_S3(exp_type, target_patients_test):
     return eeg_model_test
 
 
-def test_target_model_tau_S3(target_model, exp_type, target_patients_test):
+def inference_target_model_tau_S3(target_model, exp_type, target_patients_test):
     y_test, X_test = dt.get_data_pickle(root=root_dir, target_patients=target_patients_test, data_type=exp_type)
     # X_test = dt.get_wavelet(X_test)
 
@@ -115,18 +109,32 @@ def test_target_model_tau_S3(target_model, exp_type, target_patients_test):
     return acc
 
 
+def read_json_results():
+    json_file = open("../results/final_results.json")
+    return json.load(json_file)
+
+
+def get_random_patients(num):
+    pat_list = shuffle(pat_list_25)
+    target_patients = pat_list[:num]
+
+
 if __name__ == '__main__':
-    for i in range(4):
-        # num = 2 ** (i%4+1)
-        num = 25
-        pat_list = shuffle(pat_list_25)
-        target_patients = pat_list[:num]
-        if args.inference != 0:
+    exp_list = read_json_results()
+    for exp in exp_list[:1]:
+        target_patients = exp['patients']
+        if TEST == 0:
             # Train the models:
-            target_model = train_target_model_tau_S3(args.exp_type, target_patients)
+            target_model = train_target_model_tau_S3(target_patients)
         else:
-            target_model = load_model('outputs/' + args.exp_type + '_target_model.h5')
-        accuracy_seiz = test_target_model_tau_S3(target_model, 'seiz', target_patients)
-        accuracy_GAN = test_target_model_tau_S3(target_model, 'GAN', target_patients)
+            target_model = load_model('outputs/target_model.h5')
+        accuracy_seiz = inference_target_model_tau_S3(target_model, 'seiz', target_patients)
+        accuracy_GAN = inference_target_model_tau_S3(target_model, 'GAN', target_patients)
         pprint.pprint(target_patients)
         print('original :{}, synthetic: {}'.format(accuracy_seiz, accuracy_GAN))
+
+        exp['norm_orig'] = accuracy_seiz
+        exp['norm_synt'] = accuracy_GAN
+
+    with open("../results/norm_results.json") as norm_file:
+        json.dump(exp_list, norm_file)
