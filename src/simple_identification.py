@@ -96,7 +96,7 @@ def train_target_model_tau_S3(target_patients_test):
 
 def inference_target_model_tau_S3(target_model, exp_type, target_patients_test):
     y_test, X_test = dt.get_data_pickle(root=root_dir, target_patients=target_patients_test, data_type=exp_type)
-    # X_test = dt.get_wavelet(X_test)
+    X_test = dt.get_wavelet(X_test)
 
     X_test = np.expand_dims(X_test, axis=2)
     y_test = to_categorical(y_test)
@@ -121,8 +121,9 @@ def get_random_patients(num):
 
 if __name__ == '__main__':
     exp_list = read_json_results()
-    for exp in exp_list[:1]:
+    for exp_idx, exp in enumerate(exp_list):
         target_patients = exp['patients']
+        print("Patients: {}".format(target_patients))
         if TEST == 0:
             # Train the models:
             target_model = train_target_model_tau_S3(target_patients)
@@ -133,8 +134,8 @@ if __name__ == '__main__':
         pprint.pprint(target_patients)
         print('original :{}, synthetic: {}'.format(accuracy_seiz, accuracy_GAN))
 
-        exp['norm_orig'] = accuracy_seiz
-        exp['norm_synt'] = accuracy_GAN
+        exp_list[exp_idx]['norm_orig'] = accuracy_seiz
+        exp_list[exp_idx]['norm_synt'] = accuracy_GAN
 
     with open("../results/norm_results.json") as norm_file:
         json.dump(exp_list, norm_file)

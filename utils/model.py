@@ -29,7 +29,7 @@ from tensorflow.keras.layers import ReLU
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras.layers import MaxPooling1D, AveragePooling1D
 
-vector_len = 2048 #4136
+vector_len = 4136
 seiz_len = 2048
 non_seiz_len = 2048
 
