@@ -36,6 +36,7 @@ import utils.data as dt
 import utils.model as model
 from tensorflow.keras.utils import to_categorical
 from sklearn.utils import shuffle
+from sklearn.preprocessing import scale
 from tensorflow.keras.callbacks import TensorBoard
 from time import time
 from tensorflow.keras.models import load_model
@@ -76,6 +77,9 @@ root_dir = '../'
 def train_target_model_tau_S3(target_patients_test):
 
     y_train, X_train = dt.get_data_pickle(root=root_dir, target_patients=target_patients_test, data_type='non_seiz')
+    X_train = scale(X_train, axis=1)
+    print("total mean {}\ntotal std {}\nfirst mean {}\nfirst std {}"
+          .format(np.mean(X_train), np.std(X_train), np.mean(X_train[0, :]), np.std(X_train[0, :])))
     X_train = dt.get_wavelet(X_train)
 
     X_train = np.expand_dims(X_train, axis=2)
@@ -96,6 +100,7 @@ def train_target_model_tau_S3(target_patients_test):
 
 def inference_target_model_tau_S3(target_model, exp_type, target_patients_test):
     y_test, X_test = dt.get_data_pickle(root=root_dir, target_patients=target_patients_test, data_type=exp_type)
+    X_test = scale(X_test, axis=1)
     X_test = dt.get_wavelet(X_test)
 
     X_test = np.expand_dims(X_test, axis=2)
