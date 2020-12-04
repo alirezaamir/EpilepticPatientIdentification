@@ -40,12 +40,12 @@ from sklearn.preprocessing import scale
 from tensorflow.keras.callbacks import TensorBoard
 from time import time
 from tensorflow.keras.models import load_model
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
 import argparse
 import pprint
 import json
 
-TEST = 0
+TEST = 1
 
 # pat_list = ['pat_26102', 'pat_96002', 'pat_16202', 'pat_103002', 'pat_102',
 #             'pat_109502', 'pat_85202', 'pat_21602', 'pat_32502', 'pat_92102',
@@ -78,8 +78,6 @@ def train_target_model_tau_S3(target_patients_test):
 
     y_train, X_train = dt.get_data_pickle(root=root_dir, target_patients=target_patients_test, data_type='non_seiz')
     X_train = scale(X_train, axis=1)
-    print("total mean {}\ntotal std {}\nfirst mean {}\nfirst std {}"
-          .format(np.mean(X_train), np.std(X_train), np.mean(X_train[0, :]), np.std(X_train[0, :])))
     X_train = dt.get_wavelet(X_train)
 
     X_train = np.expand_dims(X_train, axis=2)
@@ -93,7 +91,7 @@ def train_target_model_tau_S3(target_patients_test):
                            loss='categorical_crossentropy',
                            metrics=['accuracy'])
     eeg_model_test.fit(X_train, y_train, batch_size=64, epochs=40, verbose=0)
-    # eeg_model_test.save('outputs/{}_len{}_model.h5'.format(exp_type, len(target_patients_test)))
+    eeg_model_test.save('../outputs/{}_len{}_model.h5'.format("normalized", len(target_patients_test)))
 
     return eeg_model_test
 
@@ -104,14 +102,18 @@ def inference_target_model_tau_S3(target_model, exp_type, target_patients_test):
     X_test = dt.get_wavelet(X_test)
 
     X_test = np.expand_dims(X_test, axis=2)
-    y_test = to_categorical(y_test)
+    # y_test = to_categorical(y_test)
 
     eeg_model_test = target_model
 
     predict = eeg_model_test.predict(X_test)
     predict = np.argmax(predict, axis=1)
-    acc = accuracy_score(y_test, to_categorical(predict, len(target_patients_test)))
-    return acc
+    # acc = accuracy_score(y_test, to_categorical(predict, len(target_patients_test)))
+    conf = confusion_matrix(y_test, predict)
+    pprint.pprint(conf)
+    print(conf)
+
+    return conf
 
 
 def read_json_results():
@@ -128,12 +130,13 @@ if __name__ == '__main__':
     exp_list = read_json_results()
     for exp_idx, exp in enumerate(exp_list):
         target_patients = exp['patients']
+        # target_patients = pat_list_25
         print("Patients: {}".format(target_patients))
         if TEST == 0:
             # Train the models:
             target_model = train_target_model_tau_S3(target_patients)
         else:
-            target_model = load_model('outputs/target_model.h5')
+            target_model = load_model('../outputs/normalized_len25_model.h5')
         accuracy_seiz = inference_target_model_tau_S3(target_model, 'seiz', target_patients)
         accuracy_GAN = inference_target_model_tau_S3(target_model, 'GAN', target_patients)
         pprint.pprint(target_patients)
@@ -142,5 +145,5 @@ if __name__ == '__main__':
         exp_list[exp_idx]['norm_orig'] = accuracy_seiz
         exp_list[exp_idx]['norm_synt'] = accuracy_GAN
 
-    with open("../results/norm_results.json") as norm_file:
+    with open("../results/norm_results.json", 'w') as norm_file:
         json.dump(exp_list, norm_file)

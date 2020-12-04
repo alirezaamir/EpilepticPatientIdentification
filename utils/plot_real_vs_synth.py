@@ -36,7 +36,10 @@ axes[1].tick_params(axis='both',  labelsize=12)
 # plt.savefig('../outputs/real_4sec.pdf')
 
 # for i in [415, 1534, 1708, 2546, 2850, 3054, 3654]:
-for i in [1028, 1088, 1266, 1748, 1736]:
+# for i in [1028, 1088, 1266, 1748, 1736]:
+plt.savefig('../outputs/real_4sec.pdf')
+
+for i in [415, 1534, 1708, 2546, 2850, 3054, 3654]:
     fig, axes = plt.subplots(2, 1, figsize=(8, 6))
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, hspace=0.4)
     plt.setp(axes, xlim=[0, 4], ylim=[-200, 200], yticks=[-200, 0, 200], xticks=np.arange(5))
@@ -49,6 +52,5 @@ for i in [1028, 1088, 1266, 1748, 1736]:
     axes[1].set_ylabel('T4F8', fontsize=12, fontweight="bold")
     axes[1].set_xlabel('Time (second)', fontsize=12, fontweight="bold")
     axes[1].tick_params(axis='both', labelsize=12)
-
-    plt.savefig('../outputs/GAN2/figure{}.png'.format(i))
+    plt.savefig('../outputs/GAN/figure{}.png'.format(i))
     plt.close()
