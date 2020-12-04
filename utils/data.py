@@ -28,14 +28,20 @@ import pandas as pd
 import random
 import pickle
 
-
 pat_list = ['pat_102', 'pat_7302', 'pat_8902', 'pat_11002', 'pat_16202', 'pat_21602', 'pat_21902', 'pat_22602',
             'pat_23902', 'pat_26102', 'pat_30002', 'pat_30802', 'pat_32502', 'pat_32702', 'pat_45402', 'pat_46702',
             'pat_55202', 'pat_56402', 'pat_58602', 'pat_59102', 'pat_75202', 'pat_79502', 'pat_85202', 'pat_92102',
             'pat_93902', 'pat_96002', 'pat_103002', 'pat_109502', 'pat_111902', 'pat_114902']
 
+pat_list_orig = ['pat_102', 'pat_16202', 'pat_11002', 'pat_8902', 'pat_7302', 'pat_26102', 'pat_23902',
+                 'pat_22602', 'pat_21902', 'pat_21602',
+                 'pat_30002', 'pat_30802', 'pat_32502', 'pat_32702', 'pat_45402', 'pat_46702',
+                 'pat_55202', 'pat_56402', 'pat_58602', 'pat_59102',
+                 'pat_103002', 'pat_92102', 'pat_93902', 'pat_85202', 'pat_111902', 'pat_75202',
+                 'pat_96002', 'pat_79502', 'pat_109502', 'pat_114902']
 
-def get_non_seiz_data(root = '', target_patients=None):
+
+def get_non_seiz_data(root='', target_patients=None):
     input_data = np.zeros((0, 2048))
     label = np.zeros((0))
     if target_patients is None:
@@ -50,7 +56,7 @@ def get_non_seiz_data(root = '', target_patients=None):
     return label, input_data
 
 
-def get_original_seiz(root= '', start_label=0, end_label = 30, target_patients=None):
+def get_original_seiz(root='', start_label=0, end_label=30, target_patients=None):
     input_data = np.zeros((0, 2048))
     label = np.zeros((0))
     if target_patients is None:
@@ -74,11 +80,11 @@ def get_synthetic_seiz(root=''):
     for index, pat in enumerate([102, 7302, 8902, 11002]):
         sample_directory = root + '../GAN_epilepsy/test_set_transformed/pat_' + str(pat)
         seiz_files = [os.path.join(sample_directory, sample) for sample in os.listdir(sample_directory) if
-                         sample.endswith('.mat')]
+                      sample.endswith('.mat')]
         for sample_file in seiz_files:
             mat_content = sio.loadmat(sample_file)
             sample_data = np.array(mat_content['GAN_seiz'], dtype=np.float32)
-            sample_data = np.reshape(sample_data, (1,2048))
+            sample_data = np.reshape(sample_data, (1, 2048))
             input_data = np.concatenate((input_data, sample_data))
             label = np.concatenate((label, [index]))
 
@@ -86,7 +92,7 @@ def get_synthetic_seiz(root=''):
     print(label.shape)
     filename = 'synthetic.pickle'
     outfile = open(filename, 'wb')
-    out_dict= {'data': input_data, 'label': label}
+    out_dict = {'data': input_data, 'label': label}
     pickle.dump(out_dict, outfile)
     outfile.close()
     return label, input_data
@@ -105,21 +111,22 @@ def get_wavelet(input_data):
     return input_data
 
 
-def get_data_features(patient_list, data_list , balance_ratio = None):
+def get_data_features(patient_list, data_list, balance_ratio=None):
     input_data = np.zeros((0, 108))
     label = np.zeros((0))
     for index, dir_name in enumerate(data_list):
         for pat in patient_list:
-            sample_file = 'data_files/features/' + dir_name +'/pat_'+str(pat)+'/pat_'+str(pat)+'_GAN_'+ dir_name +'.mat'
+            sample_file = 'data_files/features/' + dir_name + '/pat_' + str(pat) + '/pat_' + str(
+                pat) + '_GAN_' + dir_name + '.mat'
             print(sample_file)
             mat_content = sio.loadmat(sample_file)
             seiz = mat_content['total_features']
             size = np.array(seiz).shape[0]
-            df = pd.DataFrame(seiz) # There are some Nan in the seiz matrix, and they should be removed
+            df = pd.DataFrame(seiz)  # There are some Nan in the seiz matrix, and they should be removed
             seiz = df.fillna(0)
             if balance_ratio is not None:
                 if index == 1:
-                    input_data = random.choices(input_data, k = balance_ratio * size)
+                    input_data = random.choices(input_data, k=balance_ratio * size)
                     label = label[:balance_ratio * size]
             input_data = np.concatenate((input_data, np.array(seiz, dtype=np.float)))
             label = np.concatenate((label, np.ones(shape=(size), dtype=int) * index))
